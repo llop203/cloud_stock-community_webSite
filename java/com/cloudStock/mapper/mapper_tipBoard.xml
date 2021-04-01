@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+		 
+	
+<mapper namespace="com.cloudStock.erp.TipBoardDAO">
+	
+	<sql id="tipBoardwhere">
+		<if test="keyword1!=null and keyword1.length()>0">
+		and(
+			upper(tip_title) like upper('%${keyword1}%')
+		) 
+		or(
+			upper(tip_content) like upper('%${keyword1}%')
+		)
+		</if>
+	</sql>
+	
+	<select id="getTipBoardList" parameterType="com.cloudStock.erp.TipBoardSearchDTO"  resultType="java.util.HashMap">
+		select * from (select zxc.*, rownum||'' "RNUM" from (
+			select
+				tip_b_no					"tip_b_no"
+				, tip_title					"tip_title"
+				, tip_content				"tip_content"
+				, tip_readcount				"tip_readcount"
+				, tip_date					"tip_date"
+				, tip_pic					"tip_pic"
+			from tip_board
+			where 1=1
+				and is_del_tip='N'
+				<include refid="tipBoardwhere"/>
+			order by tip_b_no desc
+		<![CDATA[
+		  ) zxc where rownum <= ${selectPageNo*rowCntPerPage} ) where RNUM >= ${selectPageNo*rowCntPerPage-rowCntPerPage+1}
+		 ]]>
+	</select>
+	
+	<select id="getTipBoardAllCnt" parameterType="com.cloudStock.erp.TipBoardSearchDTO" resultType="int">
+		select count(*) from tip_board
+			where 1=1
+				and is_del_tip='N'
+			<include refid="tipBoardwhere"/>
+	</select>
+	
+	<select id ="getTipBoard" parameterType="int" resultType="com.cloudStock.erp.TipBoardDTO">
+		select
+			t.tip_b_no															"tip_b_no"
+			, t.tip_title														"tip_title"
+			, t.tip_content														"tip_content"
+			, t.tip_readcount													"tip_readcount"
+			, to_char(tip_date, 'YYYY-MM-DD')									"tip_date"
+			, (select u.user_name from users u where t.user_no=u.user_no)		"admin_name"
+			, is_del_tip														"is_del_tip"
+			, t.tip_pic															"tip_pic"
+		from tip_board t
+		where
+			tip_b_no=#{tip_b_no}
+	</select>
+	
+	<update id ="updateReadCount" parameterType="int">
+		update tip_board set tip_readcount = tip_readcount + 1
+		where tip_b_no=#{tip_b_no}
+	</update>
+	
+	<update id ="trashTipBoard" parameterType="com.cloudStock.erp.TipBoardDTO">
+		update tip_board set is_del_tip = 'Y'
+		where tip_b_no=#{tip_b_no}
+	</update>
+	
+	<update id="updateTipBoard" parameterType="com.cloudStock.erp.TipBoardDTO">
+		update tip_board set 
+			tip_title=#{tip_title}
+			, tip_content=#{tip_content}
+			<if test="tip_pic!=null and tip_pic.length()>0">
+				, tip_pic=#{tip_pic}
+			</if>
+		where
+			tip_b_no=#{tip_b_no}
+	</update>
+	
+	
+	<insert id="insertTipBoard" parameterType="com.cloudStock.erp.TipBoardDTO">
+		insert into tip_board(
+			tip_b_no
+			, tip_title
+			, tip_content
+			, tip_readcount
+			, user_no
+			, is_del_tip
+			<if test="tip_pic!=null and tip_pic.length()>0">
+				, tip_pic
+			</if>
+		) values(
+			(select nvl(max(tip_b_no),0)+1 from tip_board)
+			, #{tip_title}
+			, #{tip_content}
+			, 0
+			, #{user_no}
+			, 'N' 
+			<if test="tip_pic!=null and tip_pic.length()>0">
+				, #{tip_pic}
+			</if>
+		)
+	</insert>
+	
+	<select id ="getAdminPwd" parameterType="com.cloudStock.erp.TipBoardDTO" resultType="com.cloudStock.erp.TipBoardDTO">
+		select
+			user_pwd			"admin_pwd"
+		from users 
+		where
+			user_no=#{admin_no}
+	</select>
+	
+
+</mapper>

@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+		 
+	
+<mapper namespace="com.cloudStock.erp.AnalysisDAO">
+
+	<select id="checkUsed" parameterType="com.cloudStock.erp.AnalysisDTO" resultType="int">
+		select count(*)
+		from q_and_a
+		where user_no = #{user_no}
+	</select>
+	
+	<insert id="insertAnswer" parameterType="com.cloudStock.erp.AnalysisDTO">
+		insert into q_and_a(
+			question_no,
+			user_no
+		)
+		values(
+			(select nvl(max(question_no), 0)+1 from q_and_a),
+			#{user_no}
+		)
+	</insert>
+	
+	<update id="q1Update" parameterType="com.cloudStock.erp.AnalysisDTO">
+		update q_and_a 
+		set q1_no = #{answer}
+		where user_no = #{user_no}
+	
+	</update>
+	
+	<update id="q2Update" parameterType="com.cloudStock.erp.AnalysisDTO">
+		update q_and_a 
+		set q2_no = #{answer}
+		where user_no = #{user_no}
+	
+	</update>
+	
+	<update id="q3Update" parameterType="com.cloudStock.erp.AnalysisDTO">
+		update q_and_a 
+		set q3_no = #{answer}
+		where user_no = #{user_no}
+	
+	</update>
+	
+	<update id="q4Update" parameterType="com.cloudStock.erp.AnalysisDTO">
+		update q_and_a 
+		set q4_no = #{answer}
+		where user_no = #{user_no}
+	
+	</update>
+	
+	<update id="q5Update" parameterType="com.cloudStock.erp.AnalysisDTO">
+		update q_and_a 
+		set q5_no = #{answer}
+		where user_no = #{user_no}
+	
+	</update>
+	
+	<update id="q6Update" parameterType="com.cloudStock.erp.AnalysisDTO">
+		update q_and_a 
+		set q6_no = #{answer}
+		where user_no = #{user_no}
+	
+	</update>
+	
+	<update id="q7Update" parameterType="com.cloudStock.erp.AnalysisDTO">
+		update q_and_a 
+		set q7_no = #{answer}
+		where user_no = #{user_no}
+	
+	</update>
+	
+	<update id="charAvg" parameterType="com.cloudStock.erp.AnalysisDTO">
+		
+		update Q_AND_A
+		set CHAR_NO =  round (
+								(
+									(select q1_no from Q_AND_A where user_no = #{user_no}) + 
+									(select q2_no from Q_AND_A where user_no = #{user_no}) + 
+									(select q3_no from Q_AND_A where user_no = #{user_no}) + 
+									(select q4_no from Q_AND_A where user_no = #{user_no}) + 
+									(select q5_no from Q_AND_A where user_no = #{user_no}) + 
+									(select q6_no from Q_AND_A where user_no = #{user_no}) + 
+									(select q7_no from Q_AND_A where user_no = #{user_no})
+								 )/ 7 
+							)
+					   
+		where user_no = #{user_no}
+	</update>
+	
+	<update id="q8Update" parameterType="com.cloudStock.erp.AnalysisDTO">
+		update users
+		set user_purp = ${answer}
+		where user_no = #{user_no}
+	
+	</update>
+	
+	<update id="q9Update" parameterType="com.cloudStock.erp.AnalysisDTO">
+		update users
+		set user_asset = ${answer}
+		where user_no = #{user_no}
+	
+	</update>
+	
+	<update id="q10Update" parameterType="com.cloudStock.erp.AnalysisDTO">
+		update users
+		set user_salary = ${answer}
+		where user_no = #{user_no}
+	
+	</update>
+	
+	<select id="resultList" parameterType="com.cloudStock.erp.AnalysisDTO" resultType="com.cloudStock.erp.AnalysisDTO">
+		select
+			user_name "USER_NAME",
+			user_gender "GENDER",
+			user_purp "USER_PURP",
+			user_asset "USER_ASSET",
+			user_salary "USER_SALARY",
+			substr(user_purp,1, length(user_purp)-4) "USER_PURP_WON",
+			substr(user_asset,1, length(user_asset)-4) "USER_ASSET_WON",
+			substr(user_salary,1, length(user_salary)-4) "USER_SALARY_WON",
+			trunc(extract(year from sysdate)-  to_number(substr(user_birth, 1, 4))+1, -1) "AGE_AREA",
+			(select c.char_no from character c, q_and_a q where c.char_no = q.char_no and q.user_no = u.user_no) "CHAR_NO",
+			(select c.char_name from character c, q_and_a q where c.char_no = q.char_no and q.user_no = u.user_no) "CHAR_NAME",
+			(select q1_content from q1, q_and_a q where u.user_no = q.user_no and q1.q1_no = q.q1_no) "Q1_CONTENT",
+			(select q2_content from q2, q_and_a q where u.user_no = q.user_no and q2.q2_no = q.q2_no) "Q2_CONTENT",
+			(select q3_content from q3, q_and_a q where u.user_no = q.user_no and q3.q3_no = q.q3_no) "Q3_CONTENT",
+			(select q4_content from q4, q_and_a q where u.user_no = q.user_no and q4.q4_no = q.q4_no) "Q4_CONTENT",
+			(select q5_content from q5, q_and_a q where u.user_no = q.user_no and q5.q5_no = q.q5_no) "Q5_CONTENT",
+			(select q6_content from q6, q_and_a q where u.user_no = q.user_no and q6.q6_no = q.q6_no) "Q6_CONTENT",
+			(select q7_content from q7, q_and_a q where u.user_no = q.user_no and q7.q7_no = q.q7_no) "Q7_CONTENT",
+		 	
+			<!-- 20대 평균대비 -->
+			round((1+((user_asset-20340000)/20340000))*100, 0)||'%' "ASSET_20",
+			round((1+((user_salary-1900000)/1900000))*100, 0)||'%' "SALARY_20",
+			
+			<!-- 30대 평균대비 -->
+			round((1+((user_asset-52640000)/52640000))*100, 0)||'%' "ASSET_30",
+			round((1+((user_salary-2760000)/2760000))*100, 0)||'%' "SALARY_30",
+			
+			<!-- 40대 평균대비 -->
+			round((1+((user_asset-86610000)/86610000))*100, 0)||'%' "ASSET_40",
+			round((1+((user_salary-3000000)/3000000))*100, 0)||'%' "SALARY_40",
+			
+			<!-- 50대 평균대비 -->
+			round((1+((user_asset-107000000)/107000000))*100, 0)||'%' "ASSET_50",
+			round((1+((user_salary-2500000)/2500000))*100, 0)||'%' "SALARY_50",
+			
+			<!-- 60대 이상 평균대비 -->
+			round((1+((user_asset-87440000)/87440000))*100, 0)||'%' "ASSET_60",
+			round((1+((user_salary-1520000)/1520000))*100, 0)||'%' "SALARY_60",
+			
+			<!-- 추천 월 급여 -->
+			round(user_salary * 0.6, 0) "SAVE_SALARY",
+			
+			<!-- 목표달성 기간 -->
+			round(((user_purp-user_asset) /(user_salary * 0.6))/12, 0) "PURP_GOAL",
+
+
+			<!-- 추천 저금 금액 노 투자 -->
+			substr(round((user_salary * 0.6)*24, 0),1, length(round((user_salary * 0.6)*24, 0))-4) "YEAR2",
+		    substr(round((user_salary * 0.6)*48, 0),1, length(round((user_salary * 0.6)*48, 0))-4) "YEAR4",
+		    substr(round((user_salary * 0.6)*72, 0),1, length(round((user_salary * 0.6)*72, 0))-4) "YEAR6",
+		    substr(round((user_salary * 0.6)*96, 0),1, length(round((user_salary * 0.6)*96, 0))-4) "YEAR8",
+		    substr(round((user_salary * 0.6)*120, 0),1, length(round((user_salary * 0.6)*120, 0))-4) "YEAR10",
+		
+		
+			<!-- 추천 저금 금액  1번 성향 투자 -->
+		    substr(round((((user_salary * 0.6) *24)*1.03)*1.03, 0),1, length(round((((user_salary * 0.6) *24)*1.03)*1.03, 0))-4) "year2_invest1",
+		    substr(round((((((user_salary * 0.6) *48)*1.03)*1.03)*1.03)*1.03, 0),1, length(round((((((user_salary * 0.6) *48)*1.03)*1.03)*1.03)*1.03, 0))-4) "year4_invest1",
+		    substr(round((((((((user_salary * 0.6) *72)*1.03)*1.03)*1.03)*1.03)*1.03)*1.03, 0),1, length(round((((((((user_salary * 0.6) *72)*1.03)*1.03)*1.03)*1.03)*1.03)*1.03, 0))-4) "year6_invest1",
+		    substr(round((((((((((user_salary * 0.6) *96)*1.03)*1.03)*1.03)*1.03)*1.03)*1.03)*1.03)*1.03, 0),1, length(round((((((((((user_salary * 0.6) *96)*1.03)*1.03)*1.03)*1.03)*1.03)*1.03)*1.03)*1.03, 0))-4) "year8_invest1",
+		    substr(round((((((((((((user_salary * 0.6) *120)*1.03)*1.03) *1.03)*1.03)*1.03)*1.03)*1.03)*1.03)*1.03)*1.03, 0),1, length(round((((((((((((user_salary * 0.6) *120)*1.03)*1.03) *1.03)*1.03)*1.03)*1.03)*1.03)*1.03)*1.03)*1.03, 0))-4) "year10_invest1",
+			
+			
+			<!-- 추천 저금 금액  2번 성향 투자 -->
+		    substr(round((((user_salary * 0.6) *24)*1.05)*1.05, 0),1, length(round((((user_salary * 0.6) *24)*1.05)*1.05, 0))-4) "year2_invest2",
+		    substr(round((((((user_salary * 0.6) *48)*1.05)*1.05)*1.05)*1.05, 0),1, length(round((((((user_salary * 0.6) *48)*1.05)*1.05)*1.05)*1.05, 0))-4) "year4_invest2",
+		    substr(round((((((((user_salary * 0.6) *72)*1.05)*1.05)*1.05)*1.05)*1.05)*1.05, 0),1, length(round((((((((user_salary * 0.6) *72)*1.05)*1.05)*1.05)*1.05)*1.05)*1.05, 0))-4) "year6_invest2",
+		    substr(round((((((((((user_salary * 0.6) *96)*1.05)*1.05)*1.05)*1.05)*1.05)*1.05)*1.05)*1.05, 0),1, length(round((((((((((user_salary * 0.6) *96)*1.05)*1.05)*1.05)*1.05)*1.05)*1.05)*1.05)*1.05, 0))-4) "year8_invest2",
+		    substr(round((((((((((((user_salary * 0.6) *120)*1.05)*1.05) *1.05)*1.05)*1.05)*1.05)*1.05)*1.05)*1.05)*1.05, 0),1, length(round((((((((((((user_salary * 0.6) *120)*1.05)*1.05) *1.05)*1.05)*1.05)*1.05)*1.05)*1.05)*1.05)*1.05, 0))-4) "year10_invest2",
+		    
+		    
+		    <!-- 추천 저금 금액  3번 성향 투자 -->
+		    substr(round((((user_salary * 0.6) *24)*1.08)*1.08, 0),1, length(round((((user_salary * 0.6) *24)*1.08)*1.08, 0))-4) "year2_invest3",
+		    substr(round((((((user_salary * 0.6) *48)*1.08)*1.08)*1.08)*1.08, 0),1, length(round((((((user_salary * 0.6) *48)*1.08)*1.08)*1.08)*1.08, 0))-4) "year4_invest3",
+		    substr(round((((((((user_salary * 0.6) *72)*1.08)*1.08)*1.08)*1.08)*1.08)*1.08, 0),1, length(round((((((((user_salary * 0.6) *72)*1.08)*1.08)*1.08)*1.08)*1.08)*1.08, 0))-4) "year6_invest3",
+		    substr(round((((((((((user_salary * 0.6) *96)*1.08)*1.08)*1.08)*1.08)*1.08)*1.08)*1.08)*1.08, 0),1, length(round((((((((((user_salary * 0.6) *96)*1.08)*1.08)*1.08)*1.08)*1.08)*1.08)*1.08)*1.08, 0))-4) "year8_invest3",
+		    substr(round((((((((((((user_salary * 0.6) *120)*1.08)*1.08) *1.08)*1.08)*1.08)*1.08)*1.08)*1.08)*1.08)*1.08, 0),1, length(round((((((((((((user_salary * 0.6) *120)*1.08)*1.08) *1.08)*1.08)*1.08)*1.08)*1.08)*1.08)*1.08)*1.08, 0))-4) "year10_invest3"
+    		   
+		from users u
+		where user_no = #{user_no}
+	</select>
+
+
+</mapper>

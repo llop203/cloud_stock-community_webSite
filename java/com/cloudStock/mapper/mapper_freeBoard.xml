@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+		 
+	
+<mapper namespace="com.cloudStock.erp.FreeBoardDAO">
+
+
+ 
+
+	<sql id="freeBoardWhere">
+	
+	<if test="keyword1!=null and keyword1.length()>0">
+		<if test="search==1">
+		 and upper((select u.user_id from users u where f.user_no = u.user_no)) like upper('%${keyword1}%')
+		</if>
+	
+		<if test="search==2">
+		and upper(free_title) like upper('%${keyword1}%')
+		</if>
+	 </if>
+	 
+	</sql>
+
+ 
+	
+	
+	<insert id='insertBoard' parameterType="com.cloudStock.erp.FreeBoardDTO">
+		insert into free_board(
+			free_b_no
+			,free_title
+			,free_content
+			,free_readcount 	
+			, user_no
+			, is_del_free
+		) values (
+			(select nvl(max(free_b_no),0)+1 from free_board)
+			,#{free_title}		
+			,#{free_content}		
+			,0
+			, #{user_no}
+			, 'N'							
+		)
+	</insert>
+	
+
+
+<select id='getBoardList' parameterType="com.cloudStock.erp.FreeBoardSearchDTO" resultType="java.util.HashMap">
+		select * from (select zzz.*, rownum||'' RNUM from (
+				select 
+					free_b_no||''  							as "free_b_no"
+					,(select u.user_id from users u where f.user_no = u.user_no)		as "user_id"
+					, free_title 							as "free_title"
+					, free_readcount||'' 					as "free_readcount" 
+					, to_char(free_date,'yyyy-mm-dd') 		as "free_date" 
+					,free_heart||''					 		as "free_heart"
+   					, (select count(*) from free_reply r where r.free_b_no = f.free_b_no)    as   "reply_cnt"
+				from free_board f
+				where is_del_free != 'Y'
+
+				<include refid="freeBoardWhere"/>
+				<if test="orderby==null or orderby.length()==0">    
+					order by free_b_no desc
+				</if>			
+				<if test="orderby!=null and orderby.length()>0">    
+					order by ${orderby}, free_b_no desc
+				</if>			
+				
+				
+		<![CDATA[
+		) zzz where rownum <= ${selectPageNo*rowCntPerPage} ) 
+				where RNUM >= ${(selectPageNo-1)*rowCntPerPage+1}
+		]]>
+		
+	</select>
+	
+	
+	
+	<select id='getBoard' parameterType="int" resultType="com.cloudStock.erp.FreeBoardDTO">
+		select 
+			free_b_no 			as "free_b_no"
+			,free_title 		as "free_title"
+			,free_readcount 	as "free_readcount"
+			,free_content 		as "free_content"
+			,free_heart 		as "free_heart"
+			,to_char(free_date,'yyyy-mm-dd') 		as "free_date" 
+			,(select user_id from users where user_no = f.user_no)		as "user_id"
+		from free_board f
+		where free_b_no=#{free_b_no}
+	</select>
+
+
+	<update id='updateReadcount' parameterType="int">
+		update free_board set free_readcount=free_readcount+1 where free_b_no=#{free_b_no}
+	</update>
+	
+	
+	
+	<select id='getBoardCnt' parameterType="com.cloudStock.erp.FreeBoardDTO" resultType="int">
+		select count(*) from free_board 
+		where free_b_no=#{free_b_no}
+	</select>
+	
+	
+	
+	<update id='updateBoard' parameterType="com.cloudStock.erp.FreeBoardDTO">
+		update free_board set 				
+			free_title = #{free_title} 					
+			,free_content = #{free_content} 					 		
+		where free_b_no=#{free_b_no} 
+	</update>
+	
+	
+		
+	<update id='deleteBoard' parameterType="com.cloudStock.erp.FreeBoardDTO">	
+		update free_board set   
+     		is_del_free='Y'
+ 		where free_b_no = #{free_b_no}   
+	</update>
+	
+
+
+	<select id='getBoardListAllCnt' parameterType="com.cloudStock.erp.FreeBoardSearchDTO" resultType="int">
+			select count(*)
+			from(
+					select 
+							free_b_no||''  							as "free_b_no"
+							,(select u.user_id from users u where f.user_no = u.user_no)		as "user_id"
+							, free_title 							as "free_title"
+							, free_readcount||'' 					as "free_readcount" 
+							, to_char(free_date,'yyyy-mm-dd') 		as "free_date" 
+		   					, (select count(*) from free_reply r where r.free_b_no = f.free_b_no)    as   "reply_cnt"
+						from free_board f
+						where is_del_free != 'Y'
+		
+						<include refid="freeBoardWhere"/>
+				)
+	</select>
+
+
+
+	<!-- $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ -->
+	<insert id='insertReply' parameterType="com.cloudStock.erp.FreeBoardDTO">
+		insert into free_reply(
+			reply_no
+			,free_b_no
+			,reply_content
+			,group_no
+			,print_no
+			,print_level
+			,user_no
+		) values (
+			(select nvl(max(reply_no),0)+1 from free_reply)
+			,#{free_b_no}
+			,#{reply_content}
+			,(select nvl(max(reply_no),0)+1 from free_reply)		
+			,0											
+			,0		
+			,#{user_no}
+		)
+	</insert>
+	<!-- $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ -->
+
+
+
+	<update id='updatePrintNo' parameterType="com.cloudStock.erp.FreeBoardDTO">
+		update free_reply set print_no=print_no+1 
+		where group_no=(select group_no from free_reply where reply_no=#{reply_no})		
+			and print_no>(select print_no from free_reply where reply_no=#{reply_no})		
+	</update>
+
+
+
+
+	<select id='getReplyList' parameterType="com.cloudStock.erp.FreeBoardDTO" resultType="java.util.HashMap">
+				select 
+					reply_no 													as "reply_no"
+					, free_b_no 												as "free_b_no"
+					, (select user_id from users where user_no = r.user_no)		as "user_id"
+					, reply_content 											as "reply_content" 
+					, to_char(reply_date,'yyyy-mm-dd') 							as "reply_date" 
+					, (select count(*) from free_reply where free_b_no = #{free_b_no})	as "reply_list_all_cnt"
+					, print_level											 	as "print_level"  
+				from free_reply r
+				where free_b_no = #{free_b_no}
+				order by reply_no desc, reply_date desc
+	</select>
+
+
+
+	<select id='getReplyListAllCnt' resultType="int">
+			select count(*) from free_reply where free_b_no = #{free_b_no}
+	</select>
+	
+	<!-- ========================================================================  -->
+	
+	<update id='free_heart_btn_update' parameterType="com.cloudStock.erp.FreeBoardDTO">
+		<if test="free_heart_no==1">
+		update free_board set free_heart=free_heart+1 where free_b_no=#{free_b_no}
+		</if>
+		<if test="free_heart_no==-1">
+		update free_board set free_heart=free_heart-1 where free_b_no=#{free_b_no}
+		</if>
+	</update>
+	
+	<select id='heartCount' parameterType="com.cloudStock.erp.FreeBoardDTO" resultType="int">
+		select count(*) from code_heart where free_b_no =#{free_b_no} and user_no=#{user_no}
+	</select>
+	
+	
+	
+	<update id='getFreeHeartUp' parameterType="com.cloudStock.erp.FreeBoardDTO">
+		update free_board set free_heart=free_heart+1 where free_b_no=#{free_b_no}
+	</update>
+	
+	
+	
+	<insert id='getIsHeart_insert' parameterType="com.cloudStock.erp.FreeBoardDTO">
+		insert into code_heart(
+			heart_no
+			,free_b_no
+			,user_no
+			,is_heart	
+		) values (
+			(select nvl(max(heart_no),0)+1 from code_heart)
+			,#{free_b_no}	
+			,#{user_no}		
+			,1												
+		)
+	</insert>
+	
+	
+	<update id='getFreeHeartDown' parameterType="com.cloudStock.erp.FreeBoardDTO">
+		update free_board set free_heart=free_heart-1 where free_b_no=#{free_b_no}
+	</update>
+	
+	
+	
+	<delete id='getIsHeartDel' parameterType="com.cloudStock.erp.FreeBoardDTO">
+		delete from code_heart where free_b_no =#{free_b_no} and user_no=#{user_no}
+	</delete>
+	
+	<update id='getWithout_updateReadCnt' parameterType="com.cloudStock.erp.FreeBoardDTO">
+      update free_board set free_readcount=free_readcount-1 where free_b_no=#{free_b_no}
+   </update>
+	
+
+	<!-- ========================================================================  -->
+
+</mapper>
