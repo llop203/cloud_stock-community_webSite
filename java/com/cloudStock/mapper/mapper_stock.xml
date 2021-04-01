@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+		 
+	
+<mapper namespace="com.cloudStock.erp.StockDAO">
+	
+	<select id="getStockCodeList" parameterType="com.cloudStock.erp.StockDTO" resultType="java.util.HashMap">
+		select 
+			stock_code as "stock_code" 
+		from code_stock
+	</select>
+	<select id="getLastStockDate" parameterType="com.cloudStock.erp.StockDTO" resultType="String">
+		select 
+		    to_char(nvl(max(stock_date),to_date('1900-01-01','yyyy-mm-dd')),'yyyymmdd')		as "lastStockDate" 
+		from stock 
+		where stock_code = #{stock_code}
+	</select>
+	<insert id="insertStockDate" parameterType="com.cloudStock.erp.StockDTO">
+		insert into stock(
+			st_no
+			, stock_code
+			, stock_date
+		) values (
+			(select nvl(max(st_no),0)+1 from stock)
+			, #{stock_code}
+			, to_date(#{stock_date},'yyyy-mm-dd')
+		)
+	</insert>	
+	<update id="updateStockDate" parameterType="com.cloudStock.erp.StockDTO">
+			update stock set stock_date = to_date(#{stock_date},'yyyy-mm-dd')
+			where stock_date = to_date(#{lastStockDate},'yyyy-mm-dd')
+			and stock_code = #{stock_code}
+	</update>	
+	<update id="updatePrice" parameterType="com.cloudStock.erp.StockDTO">
+		update stock set 
+			close_price = #{close_price}
+			, open_price = #{open_price}
+			, highest_price = #{highest_price}
+			, lowest_price = #{lowest_price}
+		where stock_date = to_date(#{stock_date},'yyyy-mm-dd')
+		and stock_code = #{stock_code}
+	</update>
+	
+	
+</mapper>
+
+

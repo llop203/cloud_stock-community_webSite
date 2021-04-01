@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+		 
+	
+<mapper namespace="com.cloudStock.mapper.KeywordDAO">
+<select id="keywordListForm" parameterType="com.cloudStock.erp.KeywordSearchDTO" resultType="java.util.HashMap">
+select * from (select k.* , rownum||'' RNUM  
+		from (	
+			select 
+				key_no	 "KEY_NO",
+				key_name "KEY_NAME",
+				key_content "KEY_CONTENT",
+				(select user_no from users where user_no = #{user_no}) "USER_NO"
+			 from keyword
+			 where 1=1
+			 <if test="keyword1!=null and keyword1.length()>0">
+				and upper(key_name) like upper('%${keyword1}%')
+			</if>
+			 order by key_name
+		
+		<![CDATA[
+		 ) k where rownum <= ${selectPageNo*rowCntPerPage} ) where RNUM >= ${selectPageNo*rowCntPerPage - rowCntPerPage +1 }
+		]]>
+      
+</select>
+<select id="getKeywordListAllCnt" parameterType="com.cloudStock.erp.KeywordSearchDTO" resultType="int">
+select count(*)
+from (
+		select k.* , rownum||'' RNUM  
+		from (	
+			select 
+				key_no	 "KEY_NO",
+				key_name "KEY_NAME",
+				key_content "KEY_CONTENT"
+			 from keyword kw
+			 where 1=1
+			 <if test="keyword1!=null and keyword1.length()>0">
+				and upper(key_name) like upper('%${keyword1}%')
+			</if>
+			 order by key_name
+			 
+		) k
+		
+      )h
+</select> 
+
+
+<!--=======================================-->
+
+	<insert id="insertKeyword" parameterType="com.cloudStock.erp.KeywordDTO">
+		insert into keyword(
+			key_no
+			, key_name
+			, key_content
+		) values(
+			(select nvl(max(key_no),0)+1 from keyword)
+			, #{key_name}
+			, #{key_content}
+		)
+	</insert>
+	
+	
+	
+
+	<!-- 게시판 1개 글 검색하는 select 문을 내포한 select 태그 선언-->
+	<select id="getKeywordList" parameterType="com.cloudStock.erp.KeywordDTO" resultType="com.cloudStock.erp.KeywordDTO">
+		select 
+			 key_no 		"KEY_NO"
+			,key_name 		"KEY_NAME"
+			,key_content	"KEY_CONTENT"
+		from keyword 
+		where key_no=#{key_no}
+	</select>
+	
+	<!-- 수정할 게시판의 중복된 키워드의 개수를 리턴하는 select 선언 -->
+	<select id="getKeywordCheck" parameterType="com.cloudStock.erp.KeywordDTO" resultType="int">
+		select count(*) from keyword where key_name=#{key_name}
+	</select>
+	
+	<!-- 수정할 게시판의 존재 개수를 리턴하는 select 선언 -->
+	<select id="getKeywordExist" parameterType="com.cloudStock.erp.KeywordDTO" resultType="int">
+		select count(*) from keyword where key_no=#{key_no}
+	</select>
+	
+	
+	<!-- 게시판 수정 후 수정행의 적용 개수를 리턴하는 메소드 선언  -->
+	<update id="getKeywordCnt" parameterType="com.cloudStock.erp.KeywordDTO">
+		update keyword set
+			key_name = #{key_name} ,key_content = #{key_content}
+		where key_no=#{key_no}
+	</update>
+	
+	<!-- 게시판 삭제 명령한 후 삭제 적용행의 개수를 얻는 쿼리 -->
+	<delete id="getKeywordCnt_Del" parameterType="com.cloudStock.erp.KeywordDTO">
+		delete from keyword where key_no=#{key_no}
+	</delete>
+
+
+</mapper>
