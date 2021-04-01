@@ -1,0 +1,379 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+		 
+	
+<mapper namespace="com.cloudStock.erp.CrawlingDAO">
+	<sql id="stockWhere">
+		<if test="keyword!=null and keyword.length()>0">
+			and (
+				upper(stock_code) like upper('%${keyword}%')
+				or upper(stock_name) like upper('%${keyword}%')
+				or upper(industrial_name) like upper('%${keyword}%')
+			)
+		</if>
+	</sql>
+	
+	<select id="getStandardStockDate" parameterType="com.cloudStock.erp.CrawlingDTO" resultType="String">
+		select to_char(max(stock_date),'yyyy-mm-dd') from stock
+	</select>
+	<select id="getSelectedStockMap1" parameterType="com.cloudStock.erp.CrawlingDTO" resultType="java.util.HashMap">
+		select
+		    stock_code			as "stock_code"
+		    , stock_name		as "stock_name"
+		    , industrial_name	as "industrial_name"
+		from code_stock cs, code_industrial ci
+		where cs.industrial_code = ci.industrial_code
+		and stock_code = ${selectedStockCode1}
+	</select>
+	<select id="getSelectedStockMap2" parameterType="com.cloudStock.erp.CrawlingDTO" resultType="java.util.HashMap">
+		select 
+		    stock_code			as "stock_code"
+		    , stock_name		as "stock_name"
+		    , industrial_name	as "industrial_name"
+		from code_stock cs, code_industrial ci
+		where cs.industrial_code = ci.industrial_code
+		and stock_code = ${selectedStockCode2}
+	</select>
+	<select id="getSelectedStockMap3" parameterType="com.cloudStock.erp.CrawlingDTO" resultType="java.util.HashMap">
+		select 
+		    stock_code			as "stock_code"
+		    , stock_name		as "stock_name"
+		    , industrial_name	as "industrial_name"
+		from code_stock cs, code_industrial ci
+		where cs.industrial_code = ci.industrial_code
+		and stock_code = ${selectedStockCode3}
+	</select>
+	<select id="getTopRankStockList" parameterType="com.cloudStock.erp.CrawlingSearchDTO" resultType="java.util.HashMap">
+		select 
+	        rownum      as "rnum" 
+	        , stock_code		    as "stock_code"
+	        , stock_name			as "stock_name"
+	        , industrial_name		as "industrial_name"
+	        , selected_cnt		    as "selected_cnt"  
+	    from 
+	    (
+	        select 
+	            *
+	        from code_stock cs, code_industrial ci
+	        where cs.industrial_code = ci.industrial_code
+	        order by selected_cnt desc, stock_code asc
+	    )       
+	    <![CDATA[where rownum<=3]]>
+	</select>
+	
+	<select id="getStockListAllCnt" parameterType="com.cloudStock.erp.CrawlingSearchDTO" resultType="int">
+		select count(*) from code_stock cs, code_industrial ci
+		where cs.industrial_code = ci.industrial_code
+		<include refid="stockWhere"></include>		
+	</select>		
+	<select id="getStockList" parameterType="com.cloudStock.erp.CrawlingSearchDTO" resultType="java.util.HashMap">
+		select
+		    stock_code			as "stock_code"
+		    , stock_name		as "stock_name"
+    		, industrial_name	as "industrial_name"
+		    , substr(xmlagg(xmlelement(col ,',', stock_date) order by stock_date desc).extract('//text()').getstringval(),2) as "stock_dates"
+		    , substr(xmlagg(xmlelement(col ,',', close_price) order by stock_date desc).extract('//text()').getstringval(),2) as "close_prices"
+		from
+		(
+		    select cs.stock_name, ci.industrial_name, xx.* from
+		    (
+		        select
+		            stock_code
+		            , stock_date
+		            , close_price
+		        from stock
+		        where stock_date = (select max(stock_date)-0 from stock)
+		
+		        union all
+		
+		        select
+		            stock_code
+		            , stock_date
+		            , close_price
+		        from stock
+		        where stock_date = (select stock_date from
+		                            (
+		                            select * from stock
+		                            where stock_code = '000070'
+		                            <![CDATA[and stock_date <= (select max(stock_date)-30 from stock)]]>
+		                            order by 3 desc
+		                            )
+		                            where rownum = 1)
+		
+		        union all
+		
+		        select
+		            stock_code
+		            , stock_date
+		            , close_price
+		        from stock
+		        where stock_date = (select stock_date from
+		                            (
+		                            select * from stock
+		                            where stock_code = '000070'
+		                            <![CDATA[and stock_date <= (select max(stock_date)-91 from stock)]]>
+		                            order by 3 desc
+		                            )
+		                            where rownum = 1)
+		
+		        union all
+		
+		        select
+		            stock_code
+		            , stock_date
+		            , close_price
+		        from stock
+		        where stock_date = (select stock_date from
+		                            (
+		                            select * from stock
+		                            where stock_code = '000070'
+		                            <![CDATA[and stock_date <= (select max(stock_date)-182 from stock)]]>
+		                            order by 3 desc
+		                            )
+		                            where rownum = 1)
+		
+		        union all
+		
+		        select
+		            stock_code
+		            , stock_date
+		            , close_price
+		        from stock
+		        where stock_date = (select stock_date from
+		                            (
+		                            select * from stock
+		                            where stock_code = '000070'
+		                            <![CDATA[and stock_date <= (select max(stock_date)-365 from stock)]]>
+		                            order by 3 desc
+		                            )
+		                            where rownum = 1)
+		
+		        union all
+		
+		        select
+		            stock_code
+		            , stock_date
+		            , close_price
+		        from stock
+		        where stock_date = (select stock_date from
+		                            (
+		                            select * from stock
+		                            where stock_code = '000070'
+		                            <![CDATA[and stock_date <= (select max(stock_date)-1095 from stock)]]>
+		                            order by 3 desc
+		                            )
+		                            where rownum = 1)
+		    ) xx
+		    , code_stock cs, code_industrial ci
+		    where cs.stock_code = xx.stock_code and ci.industrial_code = cs.industrial_code
+		    order by xx.stock_code asc, xx.stock_date desc
+		)
+		where 1=1
+		<include refid="stockWhere"></include>		
+		group by stock_code, stock_name, industrial_name
+		<choose>
+			<when test='orderby_stock_code=="stock_code desc"'>
+				order by stock_code desc, stock_name asc, industrial_name asc
+			</when>			
+			<when test='orderby_stock_code=="stock_code asc"'>
+				order by stock_code asc, stock_name asc, industrial_name asc
+			</when>										
+			<when test='orderby_stock_name=="stock_name desc"'>
+				order by stock_name desc, stock_code asc, industrial_name asc
+			</when>	
+			<when test='orderby_stock_name=="stock_name asc"'>
+				order by stock_name asc, stock_code asc, industrial_name asc
+			</when>																	
+			<when test='orderby_industrial_name=="industrial_name desc"'>
+				order by industrial_name desc, stock_code asc, stock_name asc
+			</when>	
+			<when test='orderby_industrial_name=="industrial_name asc"'>
+				order by industrial_name asc, stock_code asc, stock_name asc
+			</when>																																		
+		</choose>
+	</select>
+	<update id="update_rateOfReturn" parameterType="com.cloudStock.erp.CrawlingDTO">
+		<if test="rateOfReturns == 1">
+			update code_stock set month1 = #{rateOfReturns_double} where stock_code = #{stock_code}
+		</if>		 
+		<if test="rateOfReturns == 2">
+			update code_stock set month3 = #{rateOfReturns_double} where stock_code = #{stock_code}
+		</if>		 
+		<if test="rateOfReturns == 3">
+			update code_stock set month6 = #{rateOfReturns_double} where stock_code = #{stock_code}
+		</if>		 
+		<if test="rateOfReturns == 4">
+			update code_stock set month12 = #{rateOfReturns_double} where stock_code = #{stock_code}
+		</if>		 
+		<if test="rateOfReturns == 5">
+			update code_stock set month36 = #{rateOfReturns_double} where stock_code = #{stock_code}
+		</if>		 
+	</update>
+	<select id="getStockList2" parameterType="com.cloudStock.erp.CrawlingSearchDTO" resultType="java.util.HashMap">
+		select
+		    stock_code			as "stock_code"
+		    , stock_name		as "stock_name"
+		    , industrial_name	as "industrial_name"
+		    , month1||''    		as "month1"
+		    , month3||''    		as "month3"
+		    , month6||''    		as "month6"
+		    , month12||''    		as "month12"
+		    , month36||''			as "month36"
+		from code_stock cs, code_industrial ci
+		where cs.industrial_code = ci.industrial_code
+		<include refid="stockWhere"></include>		
+		<choose>
+			<when test='orderby_stock_code==null and orderby_stock_name==null and orderby_industrial_name==null and orderby_rateOfReturn==null' >
+				order by stock_code asc
+			</when>
+			<when test='orderby_stock_code=="stock_code desc"'>
+				order by stock_code desc, stock_name asc, industrial_name asc
+			</when>			
+			<when test='orderby_stock_code=="stock_code asc"'>
+				order by stock_code asc, stock_name asc, industrial_name asc
+			</when>										
+			<when test='orderby_stock_name=="stock_name desc"'>
+				order by stock_name desc, stock_code asc, industrial_name asc
+			</when>	
+			<when test='orderby_stock_name=="stock_name asc"'>
+				order by stock_name asc, stock_code asc, industrial_name asc
+			</when>																	
+			<when test='orderby_industrial_name=="industrial_name desc"'>
+				order by industrial_name desc, stock_code asc, stock_name asc
+			</when>	
+			<when test='orderby_industrial_name=="industrial_name asc"'>
+				order by industrial_name asc, stock_code asc, stock_name asc
+			</when>																		
+			<when test='orderby_rateOfReturn=="month1 desc"'>
+				order by month1 desc nulls last, stock_code asc
+			</when>	
+			<when test='orderby_rateOfReturn=="month1 asc"'>
+				order by month1 asc nulls last, stock_code asc
+			</when>										
+			<when test='orderby_rateOfReturn=="month3 desc"'>
+				order by month3 desc nulls last, stock_code asc
+			</when>	
+			<when test='orderby_rateOfReturn=="month3 asc"'>
+				order by month3 asc nulls last, stock_code asc
+			</when>																		
+			<when test='orderby_rateOfReturn=="month6 desc"'>
+				order by month6 desc nulls last, stock_code asc
+			</when>	
+			<when test='orderby_rateOfReturn=="month6 asc"'>
+				order by month6 asc nulls last, stock_code asc
+			</when>																		
+			<when test='orderby_rateOfReturn=="month12 desc"'>
+				order by month12 desc nulls last, stock_code asc
+			</when>	
+			<when test='orderby_rateOfReturn=="month12 asc"'>
+				order by month12 asc nulls last, stock_code asc
+			</when>																		
+			<when test='orderby_rateOfReturn=="month36 desc"'>
+				order by month36 desc nulls last, stock_code asc
+			</when>	
+			<when test='orderby_rateOfReturn=="month36 asc"'>
+				order by month36 asc nulls last, stock_code asc
+			</when>																									
+		</choose>
+	</select>
+	
+	
+	<update id="updateSelected_Cnt1" parameterType="String">
+		update code_stock set selected_cnt = selected_cnt + 1 where stock_code = #{value}
+	</update>
+	<update id="updateSelected_Cnt2" parameterType="String">
+		update code_stock set selected_cnt = selected_cnt + 1 where stock_code = #{value}
+	</update>
+	<update id="updateSelected_Cnt3" parameterType="String">
+		update code_stock set selected_cnt = selected_cnt + 1 where stock_code = #{value}
+	</update>
+	<select id="getSelectedStockList" parameterType="com.cloudStock.erp.CrawlingDTO" resultType="java.util.HashMap">
+		select * from code_stock where stock_code = #{selectedStockCode1}
+		union all
+		select * from code_stock where stock_code = #{selectedStockCode2}
+		union all
+		select * from code_stock where stock_code = #{selectedStockCode3}		
+	</select>
+	<select id="getSelectedStockROR1" parameterType="com.cloudStock.erp.CrawlingDTO" resultType="java.util.HashMap">
+		select
+		   	month1				as "month1"
+		    , month3			as "month3"
+		    , month6			as "month6"
+		    , month12			as "month12"
+		    , month36			as "month36"
+		from code_stock cs, code_industrial ci
+		where cs.industrial_code = ci.industrial_code
+		and stock_code = ${selectedStockCode1}
+	</select>
+	<select id="getSelectedStockROR2" parameterType="com.cloudStock.erp.CrawlingDTO" resultType="java.util.HashMap">
+		select 
+		   	month1				as "month1"
+		    , month3			as "month3"
+		    , month6			as "month6"
+		    , month12			as "month12"
+		    , month36			as "month36"
+		from code_stock cs, code_industrial ci
+		where cs.industrial_code = ci.industrial_code
+		and stock_code = ${selectedStockCode2}
+	</select>
+	<select id="getSelectedStockROR3" parameterType="com.cloudStock.erp.CrawlingDTO" resultType="java.util.HashMap">
+		select 
+		   	month1				as "month1"
+		    , month3			as "month3"
+		    , month6			as "month6"
+		    , month12			as "month12"
+		    , month36			as "month36"
+		from code_stock cs, code_industrial ci
+		where cs.industrial_code = ci.industrial_code
+		and stock_code = ${selectedStockCode3}
+	</select>
+	<select id="getStockDateList1" parameterType="com.cloudStock.erp.CrawlingDTO" resultType="java.util.HashMap">
+		select       
+        	to_char(stock_date,'yyyy-mm-dd')	as "stock_date"     
+		from stock
+		where stock_code = ${selectedStockCode1}
+		and stock_date >= (select max(stock_date)-#{showMoreGraph1} from stock where stock_code = ${selectedStockCode1}) 
+	</select>
+	<select id="getStockDateList2" parameterType="com.cloudStock.erp.CrawlingDTO" resultType="java.util.HashMap">
+		select       
+        	to_char(stock_date,'yyyy-mm-dd')	as "stock_date"     
+		from stock
+		where stock_code = ${selectedStockCode2}
+		and stock_date >= (select max(stock_date)-#{showMoreGraph2} from stock where stock_code = ${selectedStockCode2}) 
+	</select>
+	<select id="getStockDateList3" parameterType="com.cloudStock.erp.CrawlingDTO" resultType="java.util.HashMap">
+		select       
+        	to_char(stock_date,'yyyy-mm-dd')	as "stock_date"     
+		from stock
+		where stock_code = ${selectedStockCode3}
+		and stock_date >= (select max(stock_date)-#{showMoreGraph3} from stock where stock_code = ${selectedStockCode3}) 
+	</select>
+	<select id="getClosePriceList1" parameterType="com.cloudStock.erp.CrawlingDTO" resultType="java.util.HashMap">
+		select       
+        	close_price						as "close_price"       
+		from stock
+		where stock_code = ${selectedStockCode1}
+		and stock_date >= (select max(stock_date)-#{showMoreGraph1} from stock where stock_code = ${selectedStockCode1}) 
+	</select>
+	<select id="getClosePriceList2" parameterType="com.cloudStock.erp.CrawlingDTO" resultType="java.util.HashMap">
+		select       
+        	close_price						as "close_price"       
+		from stock
+		where stock_code = ${selectedStockCode2}
+		and stock_date >= (select max(stock_date)-#{showMoreGraph2} from stock where stock_code = ${selectedStockCode2}) 
+	</select>
+	<select id="getClosePriceList3" parameterType="com.cloudStock.erp.CrawlingDTO" resultType="java.util.HashMap">
+		select       
+        	close_price						as "close_price"       
+		from stock
+		where stock_code = ${selectedStockCode3}
+		and stock_date >= (select max(stock_date)-#{showMoreGraph3} from stock where stock_code = ${selectedStockCode3}) 
+	</select>
+	
+	
+	
+	
+	
+	
+
+</mapper>

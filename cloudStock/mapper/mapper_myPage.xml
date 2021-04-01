@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+		 
+	
+<mapper namespace="com.cloudStock.erp.MyPageDAO">
+
+	<select id ="getMyPage" parameterType="com.cloudStock.erp.MyPageDTO" resultType="com.cloudStock.erp.MyPageDTO">
+		select
+			 user_id				"user_id"
+			, user_name				"user_name"
+			, user_pwd				"user_pwd"
+			, user_gender			"user_gender"
+			, user_email			"user_email"
+			, user_birth			"user_birth"
+			, user_phone			"user_phone"
+		from users
+		where user_no=#{user_no}
+	</select>
+	
+	<update id='updateMyPage' parameterType="com.cloudStock.erp.MyPageDTO">
+		update users 
+		set
+			user_name = #{user_name}
+			, user_gender = #{user_gender}
+			, user_email = #{user_email}
+			, user_birth =#{user_birth}
+			, user_phone =#{user_phone}
+			<if test="new_pwd!=null and new_pwd.length()>0">
+				, user_pwd = #{new_pwd}
+			</if>
+		where
+		 	user_no=#{user_no}
+	</update>
+	
+	<delete id="deleteUser" parameterType="com.cloudStock.erp.MyPageDTO">
+		delete from users where user_no= #{user_no}
+	</delete>
+	
+	<select id="getAdminCnt" parameterType="com.cloudStock.erp.MyPageDTO" resultType="int">
+		select count(*) from users where 1=#{user_no}
+	</select>
+</mapper>

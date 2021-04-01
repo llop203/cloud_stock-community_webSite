@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+		 
+	
+<mapper namespace="com.cloudStock.erp.MemberDAO">
+
+	<sql id="search">
+		<if test="text_search != null and text_search.length()>0">
+			<if test="text_search == 1">
+				and
+					lower(user_id) like lower('%${text}%')
+			</if>
+			
+			<if test="text_search == 2">
+				and
+					lower(user_name) like lower('%${text}%')
+			</if>
+			
+			<if test="text_search == 3">
+				and
+					lower(user_email) like lower('%${text}%')
+			</if>
+
+		</if>
+	
+	
+		<if test="begin_year != null and begin_year.length()>0">
+			and
+		
+			to_date(user_birth, 'YYYY-MM-DD') >= to_date(#{begin_year}||#{begin_month}, 'YYYY-MM')
+			
+			<if test="end_year != null and end_year.length()>0">
+				and
+			<![CDATA[
+			to_date(user_birth, 'YYYY-MM-DD') <= last_day(to_date(#{end_year}||#{end_month}, 'YYYY-MM'))
+			
+			 ]]> 
+			</if>
+		</if>
+		<if test="begin_year == null or begin_year.length()==0">
+			<if test="end_year != null and end_year.length()>0">
+					and
+				<![CDATA[
+					to_date(user_birth, 'YYYY-MM-DD') <= last_day(to_date(#{end_year}||#{end_month}, 'YYYY-MM'))
+				 ]]> 
+			</if>
+		</if>
+		
+		<if test="user_gender != null and user_gender.length()>0">
+			and 
+				lower(user_gender) like lower('%${user_gender}%')
+		</if>
+		
+		<if test="join_year != null and join_year.length()>0">
+			and 
+				user_joindate = to_date(#{join_year} || #{join_month} || #{join_day}, 'YYYY-MM-DD')
+		</if>
+		
+
+		<if test="min_purp != null and min_purp.length()>0">
+			and
+		
+			user_purp >= ${min_purp}||'0000'
+			
+			<if test="max_purp != null and max_purp.length()>0">
+				and
+			<![CDATA[
+			user_purp <= ${max_purp}||'0000'
+	
+			 ]]> 
+			</if>
+		</if>
+		
+		<if test="min_purp == null or min_purp.length()==0">
+			<if test="max_purp != null and max_purp.length()>0">
+					and
+				<![CDATA[
+					user_purp <= #{max_purp}||'0000'
+				 ]]> 
+			</if>
+		</if>
+		
+		<if test="min_asset != null and min_asset.length()>0">
+			and
+		
+			user_asset >= ${min_asset}||'0000'
+			
+			<if test="max_asset != null and max_asset.length()>0">
+				and
+			<![CDATA[
+			user_asset <= ${max_asset}||'0000'
+	
+			 ]]> 
+			</if>
+		</if>
+		
+		<if test="min_asset == null or min_asset.length()==0">
+			<if test="max_asset != null and max_asset.length()>0">
+					and
+				<![CDATA[
+					user_asset <= #{max_asset}||'0000'
+				 ]]> 
+			</if>
+		</if>
+		
+		<if test="min_salary != null and min_salary.length()>0">
+			and
+		
+			user_salary >= ${min_salary}||'0000'
+			
+			<if test="max_salary != null and max_salary.length()>0">
+				and
+			<![CDATA[
+			user_salary <= ${max_salary}||'0000'
+	
+			 ]]> 
+			</if>
+		</if>
+		
+		<if test="min_salary == null or min_salary.length()==0">
+			<if test="max_salary != null and max_salary.length()>0">
+					and
+				<![CDATA[
+					user_salary <= #{max_salary}||'0000'
+				 ]]> 
+			</if>
+		</if>
+		
+		
+
+	</sql>
+
+	<select id="memberListForm" parameterType="com.cloudStock.erp.MemberSearchDTO" resultType="java.util.HashMap">
+		
+		select e.*
+		from(
+				select k.*, rownum "RNUM"
+				from(
+						select 
+							user_no "USER_NO",
+							user_id "USER_ID",
+							user_pwd "USER_PWD",
+							user_name "USER_NAME",
+							user_birth "USER_BIRTH",
+							user_gender "USER_GENDER",
+							user_email "USER_EMAIL",
+							user_phone "USER_PHONE",
+							to_char(user_joindate, 'YYYY-MM-DD') "USER_JOINDATE",
+							user_purp "USER_PURP",
+							user_asset "USER_ASSET",
+							user_salary "USER_SALARY"
+						from users
+						where 1=1
+						<include refid="search"/>
+						order by user_no
+					) k <![CDATA[
+				where rownum <= ${selectPageNo * rowCntPerPage} 
+				]]>
+			) e
+			where RNUM >= ${selectPageNo * rowCntPerPage - rowCntPerPage + 1} 
+			<if test ="order !=null and order.length()>0">
+    			order by ${order}
+    		</if>
+	
+	</select>
+	
+	
+	<select id="getMemberListAllCnt" parameterType="com.cloudStock.erp.MemberSearchDTO" resultType="int">
+		select count(*)
+		from(
+				select k.*, rownum "RNUM"
+				from(
+						select 
+							user_no "USER_NO",
+							user_id "USER_ID",
+							user_pwd "USER_PWD",
+							user_name "USER_NAME",
+							user_birth "USER_BIRTH",
+							user_gender "USER_GENDER",
+							user_email "USER_EMAIL",
+							user_phone "USER_PHONE",
+							to_char(user_joindate, 'YYYY-MM-DD') "USER_JOINDATE",
+							user_purp "USER_PURP",
+							user_asset "USER_ASSET",
+							user_salary "USER_SALARY"
+						from users
+						where 1=1
+						<include refid="search"/>
+						order by user_no
+					) k 
+			) e
+
+	</select>
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
